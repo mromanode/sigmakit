@@ -20,4 +20,3 @@ transformations:
       rule_conditions:
           - type: logsource
             category: proxy
-            
