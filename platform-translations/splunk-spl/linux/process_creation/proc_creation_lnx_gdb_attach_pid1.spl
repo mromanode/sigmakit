@@ -1,4 +1,2 @@
-index="proxy" sourcetype="squid" url.original IN ("*/manager/deploy*", "*/manager/text/deploy*", "*/manager/html/upload*") http.request.method IN ("PUT", "POST") NOT (user_agent.original IN ("*Jenkins*", "*Maven*", "*Gradle*", "*Ansible*"))
-
 index="linux" sourcetype="auditd" process.executable="*/sudo" process.command_line="*gdb*" process.command_line IN ("*--command=*", "*--command *", "*-x *") process.command_line IN ("*/tmp/*", "*/var/tmp/*", "*/dev/shm/*") NOT (process.parent_executable IN ("*eclipse*", "*vscode*", "*intellij*"))
 | regex process.command_line="(-pid\\s+1|--pid[=\\s]1|-p\\s+1)"

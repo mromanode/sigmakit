@@ -1,0 +1,1 @@
+index="proxy" sourcetype="squid" url.original IN ("*/manager/deploy*", "*/manager/text/deploy*", "*/manager/html/upload*") http.request.method IN ("PUT", "POST") NOT (user_agent.original IN ("*Jenkins*", "*Maven*", "*Gradle*", "*Ansible*"))

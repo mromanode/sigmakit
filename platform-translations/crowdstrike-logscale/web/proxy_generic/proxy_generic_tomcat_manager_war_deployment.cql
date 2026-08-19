@@ -1,0 +1,1 @@
+"cs-uri"=/\/manager\/deploy/i or "cs-uri"=/\/manager\/text\/deploy/i or "cs-uri"=/\/manager\/html\/upload/i "cs-method"=/^PUT$/i or "cs-method"=/^POST$/i not ("c-useragent"=/Jenkins/i or "c-useragent"=/Maven/i or "c-useragent"=/Gradle/i or "c-useragent"=/Ansible/i)

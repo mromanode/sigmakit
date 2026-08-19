@@ -38,9 +38,14 @@ jobs:
 
       - name: Automated Conversion
         run: |
-          mkdir -p ./platform-translations/splunk-spl ./platform-translations/crowdstrike-logscale
-          sigma convert -t splunk -p ./pipelines/sigmakit_pipeline.yml ./rules/sigma/ -o ./platform-translations/splunk-spl/queries.spl
-          sigma convert -t log_scale -p crowdstrike_falcon ./rules/sigma/ -o ./platform-translations/crowdstrike-logscale/queries.cql
+          rm -rf ./platform-translations/splunk-spl ./platform-translations/crowdstrike-logscale
+          while IFS= read -r rule; do
+            rel="${rule#./rules/sigma/}"
+            base="${rel%.yml}"
+            mkdir -p "./platform-translations/splunk-spl/$(dirname "$rel")" "./platform-translations/crowdstrike-logscale/$(dirname "$rel")"
+            sigma convert -t splunk -p ./pipelines/sigmakit_pipeline.yml "$rule" -o "./platform-translations/splunk-spl/${base}.spl"
+            sigma convert -t log_scale -p crowdstrike_falcon "$rule" -o "./platform-translations/crowdstrike-logscale/${base}.cql"
+          done < <(find ./rules/sigma -name '*.yml')
 
       - name: Validate Converted Queries
         run: python tests/validate_queries.py ./platform-translations/
