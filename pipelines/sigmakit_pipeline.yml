@@ -1,0 +1,22 @@
+name: sigmakit_fieldmapping
+priority: 100
+transformations:
+    - id: field_mapping_linux_process_creation
+      type: field_name_mapping
+      mapping:
+          CommandLine: process.command_line
+          Image: process.executable
+          ParentImage: process.parent_executable
+      rule_conditions:
+          - type: logsource
+            category: process_creation
+            product: linux
+    - id: field_mapping_web_proxy
+      type: field_name_mapping
+      mapping:
+          cs-uri: url.original
+          cs-method: http.request.method
+          c-useragent: user_agent.original
+      rule_conditions:
+          - type: logsource
+            category: proxy

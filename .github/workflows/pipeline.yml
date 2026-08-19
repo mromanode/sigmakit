@@ -38,8 +38,9 @@ jobs:
 
       - name: Automated Conversion
         run: |
-          sigma convert -t splunk ./rules/sigma/ -o ./platform-translations/splunk-spl/
-          sigma convert -t crowdstrike -p crowdstrike_falcon ./rules/sigma/ -o ./platform-translations/crowdstrike-logscale/
+          mkdir -p ./platform-translations/splunk-spl ./platform-translations/crowdstrike-logscale
+          sigma convert -t splunk -p ./pipelines/sigmakit_pipeline.yml ./rules/sigma/ -o ./platform-translations/splunk-spl/queries.spl
+          sigma convert -t log_scale -p crowdstrike_falcon ./rules/sigma/ -o ./platform-translations/crowdstrike-logscale/queries.cql
 
       - name: Commit Generated Queries
         run: |
