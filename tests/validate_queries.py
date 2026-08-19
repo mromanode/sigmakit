@@ -29,13 +29,36 @@ def check_spl_index_sourcetype(path: Path) -> bool:
 
 
 def main() -> int:
-    root = Path(sys.argv[1])
+    trans_root = Path(sys.argv[1])
+    rules_root = Path(sys.argv[2])
     ok = True
-    files = list(root.rglob("*.cql")) + list(root.rglob("*.spl"))
+
+    rules = sorted(rules_root.rglob("*.yml"))
+    if not rules:
+        print(f"{rules_root}: no Sigma rules found")
+        return 1
+    for rule in rules:
+        if not rule.read_text().strip():
+            print(f"{rule}: empty Sigma rule file")
+            ok = False
+
+    expected_files = set()
+    for trans_dir, suffix in (("splunk-spl", ".spl"), ("crowdstrike-logscale", ".cql")):
+        for rule in rules:
+            counterpart = trans_root / trans_dir / rule.relative_to(rules_root).with_suffix(suffix)
+            expected_files.add(counterpart)
+            if not counterpart.is_file():
+                print(f"{counterpart}: missing converted query for rule {rule.relative_to(rules_root)}")
+                ok = False
+
+    files = sorted(trans_root.rglob("*.cql")) + sorted(trans_root.rglob("*.spl"))
     if not files:
-        print(f"{root}: no converted query files found")
+        print(f"{trans_root}: no converted query files found")
         return 1
     for path in files:
+        if path not in expected_files:
+            print(f"{path}: orphaned converted query (no matching rule)")
+            ok = False
         if not path.read_text().strip():
             print(f"{path}: empty output file")
             ok = False

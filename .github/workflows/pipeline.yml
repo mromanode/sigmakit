@@ -48,7 +48,7 @@ jobs:
           done < <(find ./rules/sigma -name '*.yml')
 
       - name: Validate Converted Queries
-        run: python tests/validate_queries.py ./platform-translations/
+        run: python tests/validate_queries.py ./platform-translations/ ./rules/sigma/
 
       - name: Commit Generated Queries
         run: |
