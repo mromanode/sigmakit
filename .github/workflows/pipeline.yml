@@ -26,7 +26,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pysigma sigma-cli pySigma-validators-sigmahq==0.20.* pysigma-backend-splunk pysigma-backend-crowdstrike
+          pip install pysigma sigma-cli pySigma-validators-sigmahq pysigma-backend-splunk pysigma-backend-crowdstrike
 
       - name: Validate Sigma Rule Syntax
         run: sigma check --fail-on-error --fail-on-issues ./rules/sigma/
@@ -38,7 +38,7 @@ jobs:
 
       - name: Automated Conversion
         run: |
-          sigma convert -t splunk -p sysmon ./rules/sigma/ -o ./platform-translations/splunk-spl/
+          sigma convert -t splunk ./rules/sigma/ -o ./platform-translations/splunk-spl/
           sigma convert -t crowdstrike -p crowdstrike_falcon ./rules/sigma/ -o ./platform-translations/crowdstrike-logscale/
 
       - name: Commit Generated Queries
