@@ -1,6 +1,23 @@
 name: sigmakit_fieldmapping
 priority: 100
 transformations:
+    - id: add_index_linux_process_creation
+      type: add_condition
+      conditions:
+          index: linux
+          sourcetype: auditd
+      rule_conditions:
+          - type: logsource
+            category: process_creation
+            product: linux
+    - id: add_index_web_proxy
+      type: add_condition
+      conditions:
+          index: proxy
+          sourcetype: squid
+      rule_conditions:
+          - type: logsource
+            category: proxy
     - id: field_mapping_linux_process_creation
       type: field_name_mapping
       mapping:

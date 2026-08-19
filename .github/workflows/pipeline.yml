@@ -42,6 +42,9 @@ jobs:
           sigma convert -t splunk -p ./pipelines/sigmakit_pipeline.yml ./rules/sigma/ -o ./platform-translations/splunk-spl/queries.spl
           sigma convert -t log_scale -p crowdstrike_falcon ./rules/sigma/ -o ./platform-translations/crowdstrike-logscale/queries.cql
 
+      - name: Validate Converted Queries
+        run: python tests/validate_queries.py ./platform-translations/
+
       - name: Commit Generated Queries
         run: |
           git config user.name "github-actions[bot]"

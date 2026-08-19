@@ -34,7 +34,10 @@ detection:
             - '--command '
             - '-x '
     selection_temp_path:
-        CommandLine|re: '/tmp/|/var/tmp/|/dev/shm/'
+        CommandLine|contains:
+            - '/tmp/'
+            - '/var/tmp/'
+            - '/dev/shm/'
     filter_optional_devel_env:
         ParentImage|contains:
             - 'eclipse'
