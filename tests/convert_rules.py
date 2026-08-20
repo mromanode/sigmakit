@@ -1,7 +1,38 @@
 import argparse
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+_ATOM = re.compile(r'(?:#[A-Za-z0-9_]+|"[^"]*"|[A-Za-z0-9_.\-]+)=/(?:\\.|[^/\\])*/[ims]*')
+
+
+def parenthesize_or_groups(query: str) -> str:
+    matches = list(_ATOM.finditer(query))
+    if not matches:
+        return query
+    depth = 0
+    depths = []
+    pos = 0
+    for m in matches:
+        seg = query[pos:m.start()]
+        depth += seg.count("(") - seg.count(")")
+        depths.append(depth)
+        pos = m.end()
+    runs = []
+    start = 0
+    for i in range(len(matches) - 1):
+        sep = query[matches[i].end():matches[i + 1].start()]
+        if re.fullmatch(r"\s+or\s+", sep):
+            continue
+        if depths[start] == 0 and i - start + 1 >= 2:
+            runs.append((matches[start].start(), matches[i].end()))
+        start = i + 1
+    if depths[start] == 0 and len(matches) - start >= 2:
+        runs.append((matches[start].start(), matches[-1].end()))
+    for a, b in reversed(runs):
+        query = query[:a] + "(" + query[a:b] + ")" + query[b:]
+    return query
 
 
 def main() -> int:
@@ -46,6 +77,8 @@ def main() -> int:
             print(res.stderr or res.stdout)
             ok = False
         else:
+            if args.target == "log_scale":
+                out.write_text(parenthesize_or_groups(out.read_text()))
             print(f"converted {rule} -> {out}")
 
     expected = {out_root / p.relative_to(rules_root).with_suffix(args.suffix) for p in current}
