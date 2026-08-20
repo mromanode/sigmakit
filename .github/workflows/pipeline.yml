@@ -12,6 +12,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - name: yaml-lint
         uses: ibiqlik/action-yamllint@v3
@@ -38,14 +40,8 @@ jobs:
 
       - name: Automated Conversion
         run: |
-          rm -rf ./platform-translations/splunk-spl ./platform-translations/crowdstrike-logscale
-          while IFS= read -r rule; do
-            rel="${rule#./rules/sigma/}"
-            base="${rel%.yml}"
-            mkdir -p "./platform-translations/splunk-spl/$(dirname "$rel")" "./platform-translations/crowdstrike-logscale/$(dirname "$rel")"
-            sigma convert -t splunk -p ./pipelines/sigmakit_pipeline.yml "$rule" -o "./platform-translations/splunk-spl/${base}.spl"
-            sigma convert -t log_scale -p crowdstrike_falcon "$rule" -o "./platform-translations/crowdstrike-logscale/${base}.cql"
-          done < <(find ./rules/sigma -name '*.yml')
+          python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/splunk-spl --target splunk --pipeline ./pipelines/sigmakit_pipeline.yml --suffix .spl
+          python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/crowdstrike-logscale --target log_scale --pipeline crowdstrike_falcon --suffix .cql
 
       - name: Validate Converted Queries
         run: python tests/validate_queries.py ./platform-translations/ ./rules/sigma/
