@@ -50,15 +50,28 @@ def main() -> int:
 
     current = {p for p in rules_root.rglob("*.yml")}
 
-    prev = subprocess.run(["git", "rev-parse", "HEAD^"], capture_output=True, text=True)
-    if prev.returncode != 0:
-        to_convert = list(current)
-    else:
-        base = prev.stdout.strip()
+    diff = None
+    merge_base = subprocess.run(
+        ["git", "merge-base", "origin/main", "HEAD"], capture_output=True, text=True
+    )
+    if merge_base.returncode == 0 and merge_base.stdout.strip():
+        base = merge_base.stdout.strip()
         diff = subprocess.run(
-            ["git", "diff", "--name-status", "--diff-filter=ACMRTD", base, "HEAD", "--", str(rules_root)],
+            ["git", "diff", "--name-status", "--diff-filter=ACMRTD", base, "HEAD", "--", rules_root.as_posix()],
             capture_output=True, text=True,
         )
+    else:
+        prev = subprocess.run(["git", "rev-parse", "HEAD^"], capture_output=True, text=True)
+        if prev.returncode != 0:
+            to_convert = list(current)
+        else:
+            base = prev.stdout.strip()
+            diff = subprocess.run(
+                ["git", "diff", "--name-status", "--diff-filter=ACMRTD", base, "HEAD", "--", rules_root.as_posix()],
+                capture_output=True, text=True,
+            )
+
+    if diff is not None:
         to_convert = []
         for line in diff.stdout.splitlines():
             parts = line.split("\t")

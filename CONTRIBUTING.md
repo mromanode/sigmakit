@@ -44,7 +44,7 @@ level: low | medium | high | critical
 On every push, the pipeline runs:
 
 1. **yamllint** — formatting of all YAML (rules, pipelines, configs).
-2. **Status check** — new rules must be `experimental`; promotions require a pull request.
+2. **Status check** — new rules must be `experimental`; enforced on pull requests, the merge queue, and pushes to `main` (diffed against the `origin/main` merge-base). Promotions to `test`/`stable` are reviewed in pull requests; `main` is branch-protected, so nothing lands there outside a PR.
 3. **`sigma check`** — rule syntax, required fields, logsource checks, duplicate IDs.
 4. **Conversion** — only new/changed rules are converted (`tests/convert_rules.py`); stale outputs from deleted/renamed rules are pruned.
 5. **Query validation** — every rule must have a `.spl` and `.cql` output, no empty files, no orphans, no broken CQL regex literals, every SPL query has `index=` and `sourcetype=`.
