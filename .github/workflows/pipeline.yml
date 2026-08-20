@@ -28,7 +28,10 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pysigma sigma-cli pySigma-validators-sigmahq pysigma-backend-splunk pysigma-backend-crowdstrike
+          pip install pysigma sigma-cli pySigma-validators-sigmahq pysigma-backend-splunk pysigma-backend-crowdstrike pyyaml
+
+      - name: Check Rule Status
+        run: python tests/check_rule_status.py
 
       - name: Validate Sigma Rule Syntax
         run: sigma check --fail-on-error --fail-on-issues ./rules/sigma/
