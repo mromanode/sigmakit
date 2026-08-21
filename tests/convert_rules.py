@@ -82,16 +82,15 @@ def main() -> int:
     fingerprint = conversion_fingerprint(pipeline)
 
     if not base:
-        to_convert = list(current)
+        to_convert = sorted(current)
     elif stamp_file.is_file() and stamp_file.read_text(encoding="utf-8").strip() == fingerprint:
-        to_convert = [rel for _, rel in changed_rule_paths(base, rules_root)]
+        to_convert = [rules_root / rel for _, rel in changed_rule_paths(base, rules_root)]
     else:
         print(f"{out_root}: pipeline or backend versions changed, converting all rules")
-        to_convert = list(current)
+        to_convert = sorted(current)
 
-    for rel in to_convert:
-        rule = rules_root / rel
-        out = out_root / rel.with_suffix(args.suffix)
+    for rule in to_convert:
+        out = out_root / rule.relative_to(rules_root).with_suffix(args.suffix)
         out.parent.mkdir(parents=True, exist_ok=True)
         try:
             res = subprocess.run(
