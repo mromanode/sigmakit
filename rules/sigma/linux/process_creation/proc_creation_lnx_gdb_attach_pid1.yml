@@ -12,7 +12,7 @@ references:
     - https://github.com/0xReadingSteiner/Silent-Call/blob/f91488d674f17b4a3b16754b0dc49f07d61ef35e/poc.sh
 author: mromanode
 date: 2026-08-13
-modified: 2026-08-20
+modified: 2026-08-21
 tags:
     - attack.privilege-escalation
     - attack.t1548.003
@@ -28,7 +28,7 @@ detection:
     selection_gdb:
         CommandLine|contains: 'gdb'
     selection_pid_1:
-        CommandLine|re: '(-pid\s+1|--pid[=\s]1|-p\s*1)'
+        CommandLine|re: '(-pid[=\s]+1(\s|$)|--pid[=\s]1(\s|$)|-p[=\s]*1(\s|$))'
     selection_command_file:
         CommandLine|contains:
             - '--command='
