@@ -1,10 +1,22 @@
 import argparse
+import hashlib
 import re
 import subprocess
 import sys
+from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
-_ATOM = re.compile(r'(?:#[A-Za-z0-9_]+|"[^"]*"|[A-Za-z0-9_.\-]+)=/(?:\\.|[^/\\])*/[ims]*')
+from common import baseline_sha, changed_rule_paths
+
+_ATOM = re.compile(r'(?:#[A-Za-z0-9_.\-@%]+|"[^"]*"|[A-Za-z0-9_.\-@%]+)=/(?:\\.|[^/\\])*/[ims]*')
+_STAMP_NAME = ".conversion-stamp"
+_TRACKED_PACKAGES = (
+    "sigma-cli",
+    "pySigma",
+    "pySigma-validators-sigmahq",
+    "pysigma-backend-splunk",
+    "pysigma-backend-crowdstrike",
+)
 
 
 def parenthesize_or_groups(query: str) -> str:
@@ -23,7 +35,7 @@ def parenthesize_or_groups(query: str) -> str:
     start = 0
     for i in range(len(matches) - 1):
         sep = query[matches[i].end():matches[i + 1].start()]
-        if re.fullmatch(r"\s+or\s+", sep):
+        if re.fullmatch(r"\s+or\s+", sep, re.IGNORECASE):
             continue
         if depths[start] == 0 and i - start + 1 >= 2:
             runs.append((matches[start].start(), matches[i].end()))
@@ -33,6 +45,17 @@ def parenthesize_or_groups(query: str) -> str:
     for a, b in reversed(runs):
         query = query[:a] + "(" + query[a:b] + ")" + query[b:]
     return query
+
+
+def conversion_fingerprint(pipeline: Path) -> str:
+    h = hashlib.sha256()
+    h.update(pipeline.read_bytes())
+    for dist in _TRACKED_PACKAGES:
+        try:
+            h.update(version(dist).encode())
+        except PackageNotFoundError:
+            pass
+    return h.hexdigest()
 
 
 def main() -> int:
@@ -46,46 +69,41 @@ def main() -> int:
 
     rules_root = Path(args.rules)
     out_root = Path(args.out)
+    pipeline = Path(args.pipeline)
     ok = True
 
     current = {p for p in rules_root.rglob("*.yml")}
 
-    merge_base = subprocess.run(
-        ["git", "merge-base", "origin/main", "HEAD"], capture_output=True, text=True
-    )
-    if merge_base.returncode == 0 and merge_base.stdout.strip():
-        base = merge_base.stdout.strip()
-    else:
-        prev = subprocess.run(["git", "rev-parse", "HEAD^"], capture_output=True, text=True)
-        base = prev.stdout.strip() if prev.returncode == 0 else ""
+    base = baseline_sha()
+    stamp_file = out_root / _STAMP_NAME
+    fingerprint = conversion_fingerprint(pipeline)
 
     if not base:
         to_convert = list(current)
+    elif stamp_file.is_file() and stamp_file.read_text(encoding="utf-8").strip() == fingerprint:
+        to_convert = [rel for _, rel in changed_rule_paths(base, rules_root)]
     else:
-        diff = subprocess.run(
-            ["git", "diff", "--name-status", "--diff-filter=ACMRTD", base, "HEAD", "--", rules_root.as_posix()],
-            capture_output=True, text=True,
-        )
-        to_convert = []
-        for line in diff.stdout.splitlines():
-            parts = line.split("\t")
-            if parts[0] != "D":
-                to_convert.append(Path(parts[-1]).relative_to(rules_root))
+        print(f"{out_root}: pipeline or backend versions changed, converting all rules")
+        to_convert = list(current)
 
     for rel in to_convert:
         rule = rules_root / rel
         out = out_root / rel.with_suffix(args.suffix)
         out.parent.mkdir(parents=True, exist_ok=True)
-        res = subprocess.run(
-            ["sigma", "convert", "-t", args.target, "-p", args.pipeline, str(rule), "-o", str(out)],
-            capture_output=True, text=True,
-        )
+        try:
+            res = subprocess.run(
+                ["sigma", "convert", "-t", args.target, "-p", args.pipeline, str(rule), "-o", str(out)],
+                capture_output=True, text=True,
+            )
+        except FileNotFoundError:
+            print("error: 'sigma' CLI not found; install sigma-cli and the backend packages", file=sys.stderr)
+            return 1
         if res.returncode != 0:
-            print(res.stderr or res.stdout)
+            print(res.stderr or res.stdout, file=sys.stderr)
             ok = False
         else:
             if args.target == "log_scale":
-                out.write_text(parenthesize_or_groups(out.read_text()))
+                out.write_text(parenthesize_or_groups(out.read_text(encoding="utf-8")), encoding="utf-8")
             print(f"converted {rule} -> {out}")
 
     expected = {out_root / p.relative_to(rules_root).with_suffix(args.suffix) for p in current}
@@ -93,6 +111,9 @@ def main() -> int:
         if out_file not in expected:
             out_file.unlink()
             print(f"removed stale {out_file}")
+
+    if ok:
+        stamp_file.write_text(fingerprint + "\n", encoding="utf-8")
 
     return 0 if ok else 1
 

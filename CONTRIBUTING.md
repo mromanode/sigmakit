@@ -36,19 +36,19 @@ level: low | medium | high | critical
 - 4-space indentation, no `---` document marker, trailing newline at EOF (enforced by yamllint).
 - Prefer behavior-based, generic detection (field/value patterns) over hardcoded paths or versions.
 - Use MITRE ATT&CK technique tags (e.g., `attack.t1059.001`).
-- Avoid regex values containing `/` in rules targeting CrowdStrike — the LogScale backend does not escape slashes in regex literals. Use `contains` with a list instead.
+- Avoid regex values containing `/` in rules targeting CrowdStrike â€” the LogScale backend does not escape slashes in regex literals. Use `contains` with a list instead.
 - Generate a unique `id` per rule (e.g., `uuidgen` or `python -c "import uuid; print(uuid.uuid4())"`).
 
 ## How CI validates
 
 On every push, the pipeline runs:
 
-1. **yamllint** — formatting of all YAML (rules, pipelines, configs).
-2. **Status check** — new rules must be `experimental`; enforced on pull requests, the merge queue, and pushes to `main` (diffed against the `origin/main` merge-base). Promotions to `test`/`stable` are reviewed in pull requests; `main` is branch-protected, so nothing lands there outside a PR.
-3. **`sigma check`** — rule syntax, required fields, logsource checks, duplicate IDs.
-4. **Conversion** — only new/changed rules are converted (`tests/convert_rules.py`); stale outputs from deleted/renamed rules are pruned.
-5. **Query validation** — every rule must have a `.spl` and `.cql` output, no empty files, no orphans, no broken CQL regex literals, every SPL query has `index=` and `sourcetype=`.
-6. **Auto-commit** — the `github-actions[bot]` commits the regenerated queries. Generated files under `platform-translations/` are owned by the pipeline; do not edit them by hand.
+1. **yamllint** â€” formatting of all YAML (rules, pipelines, configs).
+2. **Status check** â€” new rules must be `experimental`; enforced on pull requests, the merge queue, and pushes to `main` (diffed against the `origin/main` merge-base). Promotions to `test`/`stable` are reviewed in pull requests; `main` is branch-protected, so nothing lands there outside a PR.
+3. **`sigma check`** â€” rule syntax, required fields, logsource checks, duplicate IDs.
+4. **Conversion** â€” only new/changed rules are converted (`tests/convert_rules.py`); stale outputs from deleted/renamed rules are pruned. A conversion stamp per target directory records the pipeline contents and backend package versions â€” when either changes, all rules are reconverted so translations cannot drift.
+5. **Query validation** â€” every rule must have a `.spl` and `.cql` output, no empty files, no orphans, no broken CQL regex literals, every SPL query has `index=` and `sourcetype=`.
+6. **Auto-commit** â€” validation runs are read-only; on `push` events a separate job re-runs the conversion and the `github-actions[bot]` commits regenerated queries to the pushed branch. Generated files under `platform-translations/` are owned by the pipeline; do not edit them by hand.
 
 ## Testing locally
 
@@ -74,6 +74,6 @@ Use conventional prefixes matching the repo history: `feat:` (new rule/feature),
 
 ## Pull requests
 
-- Open a PR with your rule change. CI runs the full pipeline on the branch.
-- If the generated queries change, the bot commits them automatically — you only maintain the Sigma rule.
+- Open a PR with your rule change. CI runs the full pipeline on the branch (read-only: lint, validation, conversion, query checks).
+- Pushes to a branch additionally regenerate the queries and the bot commits them to that branch â€” you only maintain the Sigma rule. After merge, `main` is brought up to date the same way.
 - Keep PRs focused: one rule or one logical change per PR.

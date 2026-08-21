@@ -1,30 +1,20 @@
 import os
-import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 
+from common import baseline_sha, changed_rule_paths
+
 RULES = Path("rules/sigma")
-
-
-def run(cmd):
-    return subprocess.run(cmd, capture_output=True, text=True)
 
 
 def status_of_source(source):
     try:
-        return yaml.safe_load(source).get("status")
-    except Exception:
+        data = yaml.safe_load(source)
+    except yaml.YAMLError:
         return None
-
-
-def baseline_sha() -> str:
-    merge_base = run(["git", "merge-base", "origin/main", "HEAD"])
-    if merge_base.returncode == 0 and merge_base.stdout.strip():
-        return merge_base.stdout.strip()
-    prev = run(["git", "rev-parse", "HEAD^"])
-    return prev.stdout.strip() if prev.returncode == 0 else ""
+    return data.get("status") if isinstance(data, dict) else None
 
 
 def main() -> int:
@@ -44,17 +34,13 @@ def main() -> int:
         return 0
 
     ok = True
-    diff = run(["git", "diff", "--name-status", base, "HEAD", "--", RULES.as_posix()])
-
-    for line in diff.stdout.splitlines():
-        parts = line.split("\t")
-        status = parts[0]
-        path = Path(parts[-1])
+    for status, rel in changed_rule_paths(base, RULES):
+        path = RULES / rel
 
         if status == "D":
             continue
 
-        new_status = status_of_source(path.read_text())
+        new_status = status_of_source(path.read_text(encoding="utf-8"))
         if new_status is None:
             print(f"{path}: could not parse status")
             ok = False
