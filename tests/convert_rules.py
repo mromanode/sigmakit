@@ -49,7 +49,10 @@ def parenthesize_or_groups(query: str) -> str:
 
 def conversion_fingerprint(pipeline: Path) -> str:
     h = hashlib.sha256()
-    h.update(pipeline.read_bytes())
+    if pipeline.is_file():
+        h.update(pipeline.read_bytes())
+    else:
+        h.update(f"builtin:{pipeline}".encode())
     for dist in _TRACKED_PACKAGES:
         try:
             h.update(version(dist).encode())
@@ -113,6 +116,7 @@ def main() -> int:
             print(f"removed stale {out_file}")
 
     if ok:
+        out_root.mkdir(parents=True, exist_ok=True)
         stamp_file.write_text(fingerprint + "\n", encoding="utf-8")
 
     return 0 if ok else 1
