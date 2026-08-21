@@ -45,9 +45,9 @@ New rules must use `status: experimental`. Promotions to `test`/`stable` go thro
 1. **yamllint** - YAML formatting.
 2. **Status check** - new rules must be `experimental`.
 3. **`sigma check`** - syntax, required fields, logsource, duplicate IDs.
-4. **Conversion** - changed rules are converted; stale outputs are pruned. A stamp of pipeline contents and backend versions forces full reconversion when either changes.
+4. **Conversion** - changed rules are converted; stale outputs are pruned.
 5. **Query validation** - every rule has a `.spl` and `.cql`; no empty or orphaned files; no broken CQL regex literals; every SPL query has `index=` and `sourcetype=`.
-6. **Auto-commit** - on pushes, the bot commits regenerated queries to the branch. Never edit files under `platform-translations/` by hand.
+6. **Auto-commit** - pushes regenerate queries. Never edit `platform-translations/` by hand.
 
 ## Test locally
 
@@ -70,8 +70,3 @@ python tests/validate_queries.py ./platform-translations/ ./rules/sigma/
 ## Commit messages
 
 Use conventional prefixes: `feat:` (new rule/feature), `fix:` (bug fix), `chore:` (maintenance).
-
-## Pull requests
-
-- One rule or one logical change per PR.
-- PR runs are read-only (lint, validation, conversion checks). Pushes also regenerate queries; the bot commits them to your branch.
