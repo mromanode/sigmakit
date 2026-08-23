@@ -59,10 +59,8 @@ python tests/check_rule_status.py                           # new-rule status ga
 sigma check --fail-on-error --fail-on-issues ./rules/sigma/ # validation
 
 # convert changed rules only
-python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/splunk-spl \
-    --target splunk --pipeline ./pipelines/sigmakit_pipeline.yml --suffix .spl
-python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/crowdstrike-logscale \
-    --target log_scale --pipeline crowdstrike_falcon --suffix .cql
+python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/splunk-spl --target splunk --pipeline ./pipelines/sigmakit_pipeline.yml --suffix .spl
+python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/crowdstrike-logscale --target log_scale --pipeline crowdstrike_falcon --suffix .cql
 
 # verify outputs
 python tests/validate_queries.py ./platform-translations/ ./rules/sigma/
