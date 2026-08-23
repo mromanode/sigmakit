@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 import yaml
+
 from common import baseline_sha, changed_rule_paths
 
 RULES = Path("rules/sigma")
