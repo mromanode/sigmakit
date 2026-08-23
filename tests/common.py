@@ -8,6 +8,12 @@ def run(cmd):
 
 
 def baseline_sha() -> str:
+    explicit = os.environ.get("SIGMAKIT_BASE_SHA", "").strip()
+    if explicit:
+        if run(["git", "cat-file", "-e", explicit + "^{commit}"]).returncode == 0:
+            return explicit
+        if run(["git", "fetch", "--depth=1", "origin", explicit]).returncode == 0:
+            return explicit
     merge_base = run(["git", "merge-base", "origin/main", "HEAD"])
     if merge_base.returncode == 0 and merge_base.stdout.strip():
         return merge_base.stdout.strip()
