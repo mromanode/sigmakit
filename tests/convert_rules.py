@@ -95,7 +95,7 @@ def main() -> int:
         try:
             res = subprocess.run(
                 ["sigma", "convert", "-t", args.target, "-p", args.pipeline, str(rule), "-o", str(out)],
-                capture_output=True, text=True,
+                capture_output=True, text=True, check=False,
             )
         except FileNotFoundError:
             print("error: 'sigma' CLI not found; install sigma-cli and the backend packages", file=sys.stderr)

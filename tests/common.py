@@ -4,7 +4,7 @@ from pathlib import Path
 
 
 def run(cmd):
-    return subprocess.run(cmd, capture_output=True, text=True)
+    return subprocess.run(cmd, capture_output=True, text=True, check=False)
 
 
 def baseline_sha() -> str:

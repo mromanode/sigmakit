@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 
 import yaml
-
 from common import baseline_sha, changed_rule_paths
 
 RULES = Path("rules/sigma")
@@ -46,10 +45,9 @@ def main() -> int:
             ok = False
             continue
 
-        if status in ("A", "C") or status.startswith("R"):
-            if new_status != "experimental":
-                print(f"{path}: new rule must be status 'experimental', got '{new_status}'")
-                ok = False
+        if (status in ("A", "C") or status.startswith("R")) and new_status != "experimental":
+            print(f"{path}: new rule must be status 'experimental', got '{new_status}'")
+            ok = False
 
     return 0 if ok else 1
 
