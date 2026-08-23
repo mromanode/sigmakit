@@ -2,9 +2,22 @@ name: Sigmakit Pipeline
 
 on:
   push:
+    branches: [main]
+    paths:
+      - "rules/**"
+      - "pipelines/**"
+      - "platform-translations/**"
+      - "tests/**"
+      - "requirements-ci.txt"
+      - ".github/workflows/pipeline.yml"
   pull_request:
-  merge_group:
-  workflow_dispatch:
+    paths:
+      - "rules/**"
+      - "pipelines/**"
+      - "platform-translations/**"
+      - "tests/**"
+      - "requirements-ci.txt"
+      - ".github/workflows/pipeline.yml"
 
 permissions:
   contents: read
@@ -22,7 +35,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
-          fetch-depth: 0
+          persist-credentials: false
 
       - name: yaml-lint
         uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3.1.1
@@ -33,11 +46,13 @@ jobs:
         uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
         with:
           python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements-ci.txt
 
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pysigma sigma-cli pySigma-validators-sigmahq pysigma-backend-splunk pysigma-backend-crowdstrike pyyaml
+          pip install -r requirements-ci.txt
 
       - name: Check Rule Status
         run: python tests/check_rule_status.py
@@ -53,34 +68,31 @@ jobs:
       - name: Validate Converted Queries
         run: python tests/validate_queries.py ./platform-translations/ ./rules/sigma/
 
+      - name: Upload Converted Queries
+        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7.0.0
+        with:
+          name: platform-translations
+          path: platform-translations/
+          retention-days: 3
+          if-no-files-found: error
+
   publish-queries:
     needs: sigma-pipeline
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     permissions:
       contents: write
 
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - name: Download Converted Queries
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: "3.11"
-
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pysigma sigma-cli pySigma-validators-sigmahq pysigma-backend-splunk pysigma-backend-crowdstrike pyyaml
-
-      - name: Regenerate Queries
-        run: |
-          python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/splunk-spl --target splunk --pipeline ./pipelines/sigmakit_pipeline.yml --suffix .spl
-          python tests/convert_rules.py --rules rules/sigma --out ./platform-translations/crowdstrike-logscale --target log_scale --pipeline crowdstrike_falcon --suffix .cql
+          name: platform-translations
+          path: platform-translations
 
       - name: Commit Generated Queries
         run: |

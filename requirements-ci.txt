@@ -1,0 +1,6 @@
+pysigma
+sigma-cli
+pySigma-validators-sigmahq
+pysigma-backend-splunk
+pysigma-backend-crowdstrike
+pyyaml
