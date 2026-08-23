@@ -52,9 +52,10 @@ New rules must use `status: experimental`. Promotions to `test`/`stable` go thro
 ## Test locally
 
 ```bash
-pip install sigma-cli pysigma-backend-splunk pysigma-backend-crowdstrike pySigma-validators-sigmahq
+pip install sigma-cli pysigma-backend-splunk pysigma-backend-crowdstrike pySigma-validators-sigmahq pyyaml
 
 python -m yamllint .                                        # formatting
+python tests/check_rule_status.py                           # new-rule status gate
 sigma check --fail-on-error --fail-on-issues ./rules/sigma/ # validation
 
 # convert changed rules only
