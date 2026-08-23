@@ -35,6 +35,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
+          # Full history required: tests/common.py computes `git merge-base origin/main HEAD`
+          fetch-depth: 0
           persist-credentials: false
 
       - name: yaml-lint
